@@ -6,53 +6,44 @@
 package com.github.im.bs.business.control;
 
 import com.github.im.bs.business.entity.User;
-import com.github.im.bs.business.entity.UserType;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserService {
-    private Map<Long, User> users = Collections.synchronizedMap(new HashMap<>());
-    private static final AtomicLong CLIENT_ID_HOLDER = new AtomicLong();
-
-    @PostConstruct
-    private void init() {
-        long id = CLIENT_ID_HOLDER.incrementAndGet();
-        users.put(id, new User(id, "Ivan", "Ivanov", UserType.ADMIN));
-        id = CLIENT_ID_HOLDER.incrementAndGet();
-        users.put(id, new User(id, "Petr", "Petrov", UserType.USER));
-        id = CLIENT_ID_HOLDER.incrementAndGet();
-        users.put(id, new User(id, "Alexander", "Alexandrov", UserType.USER));
-        log.info("Users initialized");
-    }
+    private final UserRepository repository;
 
     public List<User> getAllUsers() {
+        List<User> users = repository.findAll();
         log.info("All users retrieved. Amount: {}", users.size());
-        return new ArrayList<>(users.values());
+        return new ArrayList<>(users);
     }
 
     public User getUser(Long userId) {
         log.info("Retrieved user by id: {}", userId);
-        return users.get(userId);
+        return repository.findUserById(userId);
     }
 
     public long create(User user) {
-        long id = CLIENT_ID_HOLDER.incrementAndGet();
-        user.setId(id);
-        users.put(id, user);
-        return id;
+        User savedUser = repository.save(user);
+        log.info("Created new User: {}", savedUser);
+        return savedUser.getId();
     }
 
     public boolean update(User user, long userId) {
-        User currentUser = users.get(userId);
+        User currentUser = repository.findUserById(userId);
         if (currentUser != null) {
-            user.setId(userId);
-            users.put(userId, user);
+            currentUser.setFirstName(user.getFirstName());
+            currentUser.setLastName(user.getLastName());
+            currentUser.setUserType(user.getUserType());
+            repository.save(currentUser);
+            log.info("User '{}' has updated: {}", currentUser.getId(), currentUser);
             return true;
         } else {
             return false;
@@ -60,9 +51,10 @@ public class UserService {
     }
 
     public boolean delete(long userId) {
-        User currentUser = users.get(userId);
+        User currentUser = repository.findUserById(userId);
         if (currentUser != null) {
-            users.remove(userId);
+            repository.delete(currentUser);
+            log.info("User '{}' has deleted.", currentUser.getId());
             return true;
         } else {
             return false;
