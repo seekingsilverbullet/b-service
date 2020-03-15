@@ -12,9 +12,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -29,5 +27,37 @@ public class UserResource {
     @ApiOperation(value = "Returns all of existing users", response = User.class, responseContainer = "List")
     public ResponseEntity<List<User>> getAllUsers() {
         return new ResponseEntity<>(service.getAllUsers(), HttpStatus.OK);
+    }
+
+    @GetMapping(path = "/{id}")
+    @ApiOperation(value = "Returns existing user by id", response = User.class)
+    public ResponseEntity<User> getUser(@PathVariable("id") long userId) {
+        User user = service.getUser(userId);
+        return user != null
+                ? new ResponseEntity<>(user, HttpStatus.OK)
+                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    @PostMapping(consumes = "application/json")
+    @ApiOperation(value = "Creates new user")
+    public ResponseEntity<Long> create(@RequestBody User user) {
+        long userId = service.create(user);
+        return new ResponseEntity<>(userId, HttpStatus.CREATED);
+    }
+
+    @PutMapping(path = "/{id}", consumes = "application/json")
+    @ApiOperation(value = "Updates the existing user by id")
+    public ResponseEntity<?> update(@PathVariable("id") long userId, @RequestBody User user) {
+        return service.update(user, userId)
+                ? new ResponseEntity<>(HttpStatus.OK)
+                : new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+    }
+
+    @DeleteMapping(path = "/{id}")
+    @ApiOperation(value = "Deletes the existing user by id")
+    public ResponseEntity<?> delete(@PathVariable("id") long userId) {
+        return service.delete(userId)
+                ? new ResponseEntity<>(HttpStatus.OK)
+                : new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
     }
 }
