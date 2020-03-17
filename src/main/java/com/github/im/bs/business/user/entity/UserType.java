@@ -3,7 +3,7 @@
  * ivan
  */
 
-package com.github.im.bs.business.entity;
+package com.github.im.bs.business.user.entity;
 
 public enum UserType {
     ADMIN,

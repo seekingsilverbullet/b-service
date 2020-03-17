@@ -3,9 +3,10 @@
  * ivan
  */
 
-package com.github.im.bs.business.control;
+package com.github.im.bs.business.user.control;
 
-import com.github.im.bs.business.entity.User;
+import com.github.im.bs.business.user.entity.User;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,12 +43,18 @@ public class UserService {
             currentUser.setFirstName(user.getFirstName());
             currentUser.setLastName(user.getLastName());
             currentUser.setUserType(user.getUserType());
-            repository.save(currentUser);
+            currentUser.setUserAccount(user.getUserAccount());
+            repository.saveAndFlush(currentUser);
             log.info("User '{}' has updated: {}", currentUser.getId(), currentUser);
             return true;
         } else {
             return false;
         }
+    }
+
+    public void update(@NonNull User user) {
+        repository.saveAndFlush(user);
+        log.info("User '{}' has updated: {}", user.getId(), user);
     }
 
     public boolean delete(long userId) {

@@ -3,9 +3,9 @@
  * ivan
  */
 
-package com.github.im.bs.business.control;
+package com.github.im.bs.business.user.control;
 
-import com.github.im.bs.business.entity.User;
+import com.github.im.bs.business.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRepository extends JpaRepository<User, Long> {

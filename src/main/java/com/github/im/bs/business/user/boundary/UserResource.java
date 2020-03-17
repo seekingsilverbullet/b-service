@@ -3,10 +3,10 @@
  * ivan
  */
 
-package com.github.im.bs.business.boundary;
+package com.github.im.bs.business.user.boundary;
 
-import com.github.im.bs.business.control.UserService;
-import com.github.im.bs.business.entity.User;
+import com.github.im.bs.business.user.control.UserService;
+import com.github.im.bs.business.user.entity.User;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
