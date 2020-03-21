@@ -9,7 +9,9 @@ import com.github.im.bs.business.user.entity.User;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +29,12 @@ public class UserService {
     }
 
     public User getUser(Long userId) {
+        User user = repository.findUserById(userId);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
         log.info("Retrieved user by id: {}", userId);
-        return repository.findUserById(userId);
+        return user;
     }
 
     public long create(User user) {
@@ -37,19 +43,14 @@ public class UserService {
         return savedUser.getId();
     }
 
-    public boolean update(User user, long userId) {
-        User currentUser = repository.findUserById(userId);
-        if (currentUser != null) {
-            currentUser.setFirstName(user.getFirstName());
-            currentUser.setLastName(user.getLastName());
-            currentUser.setUserType(user.getUserType());
-            currentUser.setUserAccount(user.getUserAccount());
-            repository.saveAndFlush(currentUser);
-            log.info("User '{}' has updated: {}", currentUser.getId(), currentUser);
-            return true;
-        } else {
-            return false;
-        }
+    public void update(User user, long userId) {
+        User currentUser = getUser(userId);
+        currentUser.setFirstName(user.getFirstName());
+        currentUser.setLastName(user.getLastName());
+        currentUser.setUserType(user.getUserType());
+        currentUser.setUserAccount(user.getUserAccount());
+        repository.saveAndFlush(currentUser);
+        log.info("User '{}' has updated: {}", currentUser.getId(), currentUser);
     }
 
     public void update(@NonNull User user) {
@@ -57,14 +58,9 @@ public class UserService {
         log.info("User '{}' has updated: {}", user.getId(), user);
     }
 
-    public boolean delete(long userId) {
-        User currentUser = repository.findUserById(userId);
-        if (currentUser != null) {
-            repository.delete(currentUser);
-            log.info("User '{}' has deleted.", currentUser.getId());
-            return true;
-        } else {
-            return false;
-        }
+    public void delete(long userId) {
+        User currentUser = getUser(userId);
+        repository.delete(currentUser);
+        log.info("User '{}' has deleted.", currentUser.getId());
     }
 }

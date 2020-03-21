@@ -1,11 +1,10 @@
 /*
- * 3/17/20, 11:54 PM
+ * 3/21/20, 6:21 PM
  * ivan
  */
 
 package com.github.im.bs.business.account.entity;
 
-import com.github.im.bs.business.user.entity.User;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -16,8 +15,9 @@ import java.math.BigDecimal;
 @Builder
 @ToString
 @EqualsAndHashCode
-public class Operation {
+public class OperationResponse {
     private OperationType type;
-    private BigDecimal sum;
-    private User recipient;
+    private BigDecimal currentBalance;
+    private boolean performed;
+    private String message;
 }

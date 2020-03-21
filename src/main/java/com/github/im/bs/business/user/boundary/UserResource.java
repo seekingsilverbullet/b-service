@@ -33,9 +33,7 @@ public class UserResource {
     @ApiOperation(value = "Returns existing user by id", response = User.class)
     public ResponseEntity<User> getUser(@PathVariable("id") long userId) {
         User user = service.getUser(userId);
-        return user != null
-                ? new ResponseEntity<>(user, HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
     @PostMapping(consumes = "application/json")
@@ -48,16 +46,14 @@ public class UserResource {
     @PutMapping(path = "/{id}", consumes = "application/json")
     @ApiOperation(value = "Updates the existing user by id")
     public ResponseEntity<?> update(@PathVariable("id") long userId, @RequestBody User user) {
-        return service.update(user, userId)
-                ? new ResponseEntity<>(HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        service.update(user, userId);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping(path = "/{id}")
     @ApiOperation(value = "Deletes the existing user by id")
     public ResponseEntity<?> delete(@PathVariable("id") long userId) {
-        return service.delete(userId)
-                ? new ResponseEntity<>(HttpStatus.OK)
-                : new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+        service.delete(userId);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }
