@@ -5,13 +5,14 @@
 
 package com.github.im.bs.business.account.entity;
 
+import com.github.im.bs.business.user.entity.User;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -29,4 +30,8 @@ public class Account {
     @ApiModelProperty(hidden = true)
     private UUID id;
     private BigDecimal balance;
+    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ApiModelProperty(hidden = true)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private User user;
 }
