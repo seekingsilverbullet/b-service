@@ -7,6 +7,8 @@ package com.github.im.bs.business.admin.boundary;
 
 import com.github.im.bs.business.account.control.AccountService;
 import com.github.im.bs.business.account.entity.Account;
+import com.github.im.bs.business.transaction.control.TransactionService;
+import com.github.im.bs.business.transaction.entity.Transaction;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +26,17 @@ import java.util.List;
 @Api(value = "Admin Operation Handler")
 public class AdminOperationResource {
     private final AccountService accountService;
+    private final TransactionService transactionService;
 
     @GetMapping(path = "/accounts")
     @ApiOperation(value = "Returns all of existing accounts", response = Account.class, responseContainer = "List")
     public ResponseEntity<List<Account>> getAllAccounts() {
         return new ResponseEntity<>(accountService.getAllAccounts(), HttpStatus.OK);
+    }
+
+    @GetMapping(path = "/transactions")
+    @ApiOperation(value = "Returns all of existing transactions", response = Transaction.class, responseContainer = "List")
+    public ResponseEntity<List<Transaction>> getAllTransactions() {
+        return new ResponseEntity<>(transactionService.getAllTransactions(), HttpStatus.OK);
     }
 }

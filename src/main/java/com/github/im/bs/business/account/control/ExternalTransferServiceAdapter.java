@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @Slf4j
 @Component
 @Transactional
-public class ExternalTransferAdapter {
+public class ExternalTransferServiceAdapter {
     public void performExternalTransfer(String recipientId, BigDecimal operationSum) {
         try {
             log.info("Performed external transfer request: '{}' -> {}", recipientId, operationSum);

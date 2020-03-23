@@ -16,11 +16,8 @@ import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+@Data
 @NoArgsConstructor
-@Getter
-@Setter
-@ToString
-@EqualsAndHashCode
 @ApiModel(value = "Account")
 @Entity
 public class Account {

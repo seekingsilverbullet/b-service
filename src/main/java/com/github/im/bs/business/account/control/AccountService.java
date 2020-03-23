@@ -9,6 +9,8 @@ import com.github.im.bs.business.account.entity.Account;
 import com.github.im.bs.business.account.entity.OperationRequest;
 import com.github.im.bs.business.account.entity.OperationResponse;
 import com.github.im.bs.business.account.entity.OperationType;
+import com.github.im.bs.business.transaction.control.TransactionService;
+import com.github.im.bs.business.transaction.entity.Transaction;
 import com.github.im.bs.business.user.control.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +31,8 @@ import java.util.List;
 public class AccountService {
     private final AccountRepository repository;
     private final UserService userService;
-    private final ExternalTransferAdapter transferAdapter;
+    private final TransactionService transactionService;
+    private final ExternalTransferServiceAdapter transferAdapter;
 
     private static final BigDecimal ZERO = new BigDecimal(0);
     private static final BigDecimal EXTERNAL_TRANSFER_COMMISSION_VALUE = new BigDecimal("0.01");
@@ -73,13 +76,13 @@ public class AccountService {
     public OperationResponse performOperation(long userId, OperationRequest request) {
         try {
             Account account = getAccount(userId);
-            switch (request.getType()) {
+            switch (request.getOperationType()) {
                 case CHECK_BALANCE:
                     return performCheckBalance(account);
                 case WITHDRAW:
-                    return performWithdraw(request.getOperationSum(), account);
+                    return performWithdraw(request.getOperationSum(), account, null);
                 case DEPOSIT:
-                    return performDeposit(request.getOperationSum(), account);
+                    return performDeposit(request.getOperationSum(), account, null);
                 case TRANSFER:
                     return performTransfer(request, account);
                 default:
@@ -101,12 +104,25 @@ public class AccountService {
         return response;
     }
 
-    private OperationResponse performWithdraw(BigDecimal operationSum, Account account) {
+    private OperationResponse performWithdraw(BigDecimal operationSum, Account account, Transaction transaction) {
+        BigDecimal originalBalance = account.getBalance();
         BigDecimal resultBalance = account.getBalance().subtract(operationSum);
         if (resultBalance.compareTo(ZERO) >= 0) {
             resultBalance = resultBalance.setScale(2, RoundingMode.HALF_DOWN);
             account.setBalance(resultBalance);
             repository.save(account);
+
+            if (transaction == null) {
+                transaction = Transaction.builder()
+                        .operationType(OperationType.WITHDRAW)
+                        .balanceBeforeTransaction(originalBalance)
+                        .balanceAfterTransaction(resultBalance)
+                        .user(account.getUser())
+                        .build();
+            } else {
+                transaction.setBalanceAfterTransaction(resultBalance);
+            }
+            transactionService.register(transaction);
 
             OperationResponse response = OperationResponse.builder()
                     .type(OperationType.WITHDRAW)
@@ -120,10 +136,23 @@ public class AccountService {
         }
     }
 
-    private OperationResponse performDeposit(BigDecimal operationSum, Account account) {
+    private OperationResponse performDeposit(BigDecimal operationSum, Account account, Transaction transaction) {
+        BigDecimal originalBalance = account.getBalance();
         BigDecimal resultBalance = account.getBalance().add(operationSum);
         account.setBalance(resultBalance);
         repository.save(account);
+
+        if (transaction == null) {
+            transaction = Transaction.builder()
+                    .operationType(OperationType.DEPOSIT)
+                    .balanceBeforeTransaction(originalBalance)
+                    .balanceAfterTransaction(resultBalance)
+                    .user(account.getUser())
+                    .build();
+        } else {
+            transaction.setBalanceAfterTransaction(resultBalance);
+        }
+        transactionService.register(transaction);
 
         OperationResponse response = OperationResponse.builder()
                 .type(OperationType.DEPOSIT)
@@ -148,10 +177,20 @@ public class AccountService {
     private OperationResponse performInternalTransfer(OperationRequest request, Account account) {
         log.info("Trying to performed operation for user '{}': {}", account.getUser().getId(), request);
         Account recipient = getAccount(getUserIdFromRequest(request));
-        performWithdraw(request.getOperationSum(), account);
-        performDeposit(request.getOperationSum(), recipient);
+        Transaction transaction = Transaction.builder()
+                .operationType(OperationType.TRANSFER)
+                .balanceBeforeTransaction(account.getBalance())
+                .user(account.getUser())
+                .build();
+        performWithdraw(request.getOperationSum(), account, transaction);
+        transaction = Transaction.builder()
+                .operationType(OperationType.TRANSFER)
+                .balanceBeforeTransaction(recipient.getBalance())
+                .user(recipient.getUser())
+                .build();
+        performDeposit(request.getOperationSum(), recipient, transaction);
         OperationResponse response = OperationResponse.builder()
-                .type(request.getType())
+                .type(request.getOperationType())
                 .operationSum(request.getOperationSum())
                 .currentBalance(account.getBalance())
                 .build();
@@ -172,11 +211,16 @@ public class AccountService {
         BigDecimal operationSum = request.getOperationSum();
         BigDecimal commissionSum = operationSum.multiply(EXTERNAL_TRANSFER_COMMISSION_VALUE);
 
-        performWithdraw(operationSum.add(commissionSum), account);
+        Transaction transaction = Transaction.builder()
+                .operationType(OperationType.TRANSFER)
+                .balanceBeforeTransaction(account.getBalance())
+                .user(account.getUser())
+                .build();
+        performWithdraw(operationSum.add(commissionSum), account, transaction);
         transferAdapter.performExternalTransfer(request.getRecipientId(), operationSum);
 
         OperationResponse response = OperationResponse.builder()
-                .type(request.getType())
+                .type(request.getOperationType())
                 .operationSum(operationSum)
                 .currentBalance(account.getBalance())
                 .build();

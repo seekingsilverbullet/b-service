@@ -11,16 +11,13 @@ import lombok.*;
 
 import javax.persistence.*;
 
+@Data
 @NoArgsConstructor
-@Getter
-@Setter
-@ToString
-@EqualsAndHashCode
 @ApiModel(value = "User")
 @Entity
 public class User {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Setter(AccessLevel.NONE)
     @ApiModelProperty(hidden = true)
     private Long id;
