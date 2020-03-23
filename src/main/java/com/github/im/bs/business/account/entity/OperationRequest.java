@@ -5,7 +5,6 @@
 
 package com.github.im.bs.business.account.entity;
 
-import com.github.im.bs.business.user.entity.User;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -18,6 +17,7 @@ import java.math.BigDecimal;
 @EqualsAndHashCode
 public class OperationRequest {
     private OperationType type;
-    private BigDecimal sum;
-    private User recipient;
+    private BigDecimal operationSum;
+    private ServiceType serviceType;
+    private String recipientId;
 }

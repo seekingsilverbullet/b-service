@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 @EqualsAndHashCode
 public class OperationResponse {
     private OperationType type;
+    private BigDecimal operationSum;
     private BigDecimal currentBalance;
     private String message;
 }

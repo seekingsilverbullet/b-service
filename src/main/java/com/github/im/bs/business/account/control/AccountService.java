@@ -68,17 +68,24 @@ public class AccountService {
     }
 
     public OperationResponse performOperation(long userId, OperationRequest operationRequest) {
-        Account account = getAccount(userId);
-        switch (operationRequest.getType()) {
-            case CHECK_BALANCE:
-                return performCheckBalance(operationRequest, account);
-            case WITHDRAW:
-                return performWithdraw(operationRequest, account);
-            case DEPOSIT:
-                return performDeposit(operationRequest, account);
-            case TRANSFER:
-            default:
-                throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "Operation is not supported");
+        try {
+            Account account = getAccount(userId);
+            switch (operationRequest.getType()) {
+                case CHECK_BALANCE:
+                    return performCheckBalance(operationRequest, account);
+                case WITHDRAW:
+                    return performWithdraw(operationRequest, account);
+                case DEPOSIT:
+                    return performDeposit(operationRequest, account);
+                case TRANSFER:
+                    return performTransfer(operationRequest, account);
+                default:
+                    throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "Operation is not supported");
+            }
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Operation execution is failed", e);
         }
     }
 
@@ -90,7 +97,7 @@ public class AccountService {
     }
 
     private OperationResponse performWithdraw(OperationRequest operationRequest, Account account) {
-        BigDecimal resultBalance = account.getBalance().subtract(operationRequest.getSum());
+        BigDecimal resultBalance = account.getBalance().subtract(operationRequest.getOperationSum());
         if (resultBalance.compareTo(ZERO) >= 0) {
             resultBalance = resultBalance.setScale(2, RoundingMode.HALF_DOWN);
             account.setBalance(resultBalance);
@@ -98,6 +105,7 @@ public class AccountService {
 
             return OperationResponse.builder()
                     .type(operationRequest.getType())
+                    .operationSum(operationRequest.getOperationSum())
                     .currentBalance(account.getBalance())
                     .build();
         } else {
@@ -106,13 +114,43 @@ public class AccountService {
     }
 
     private OperationResponse performDeposit(OperationRequest operationRequest, Account account) {
-        BigDecimal resultBalance = account.getBalance().add(operationRequest.getSum());
+        BigDecimal resultBalance = account.getBalance().add(operationRequest.getOperationSum());
         account.setBalance(resultBalance);
         repository.save(account);
 
         return OperationResponse.builder()
                 .type(operationRequest.getType())
+                .operationSum(operationRequest.getOperationSum())
                 .currentBalance(account.getBalance())
                 .build();
+    }
+
+    private OperationResponse performTransfer(OperationRequest operationRequest, Account account) {
+        switch (operationRequest.getServiceType()) {
+            case INTERNAL:
+                return performInternalTransfer(operationRequest, account);
+            case EXTERNAL:
+            default:
+                throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "Service type is not supported");
+        }
+    }
+
+    private OperationResponse performInternalTransfer(OperationRequest operationRequest, Account account) {
+        Account recipient = getAccount(getUserIdFromRequest(operationRequest));
+        performWithdraw(operationRequest, account);
+        performDeposit(operationRequest, recipient);
+        return OperationResponse.builder()
+                .type(operationRequest.getType())
+                .operationSum(operationRequest.getOperationSum())
+                .currentBalance(account.getBalance())
+                .build();
+    }
+
+    private long getUserIdFromRequest(OperationRequest operationRequest) {
+        try {
+            return Long.parseLong(operationRequest.getRecipientId());
+        } catch (NumberFormatException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user id");
+        }
     }
 }
