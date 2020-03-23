@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @Builder
 @ToString
 @EqualsAndHashCode
-public class Operation {
+public class OperationRequest {
     private OperationType type;
     private BigDecimal sum;
     private User recipient;

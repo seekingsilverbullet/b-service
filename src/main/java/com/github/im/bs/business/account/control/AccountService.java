@@ -6,9 +6,8 @@
 package com.github.im.bs.business.account.control;
 
 import com.github.im.bs.business.account.entity.Account;
-import com.github.im.bs.business.account.entity.Operation;
+import com.github.im.bs.business.account.entity.OperationRequest;
 import com.github.im.bs.business.account.entity.OperationResponse;
-import com.github.im.bs.business.account.entity.OperationType;
 import com.github.im.bs.business.user.control.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +28,8 @@ import java.util.List;
 public class AccountService {
     private final UserService userService;
     private final AccountRepository repository;
+
+    private static final BigDecimal ZERO = new BigDecimal(0);
 
     @Transactional(readOnly = true)
     public List<Account> getAllAccounts() {
@@ -64,17 +67,52 @@ public class AccountService {
         log.info("The account has deleted: {}", account);
     }
 
-    public OperationResponse performOperation(long userId, Operation operation) {
+    public OperationResponse performOperation(long userId, OperationRequest operationRequest) {
         Account account = getAccount(userId);
+        switch (operationRequest.getType()) {
+            case CHECK_BALANCE:
+                return performCheckBalance(operationRequest, account);
+            case WITHDRAW:
+                return performWithdraw(operationRequest, account);
+            case DEPOSIT:
+                return performDeposit(operationRequest, account);
+            case TRANSFER:
+            default:
+                throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "Operation is not supported");
+        }
+    }
 
-        if (operation.getType() == OperationType.CHECK_BALANCE) {
+    private OperationResponse performCheckBalance(OperationRequest operationRequest, Account account) {
+        return OperationResponse.builder()
+                .type(operationRequest.getType())
+                .currentBalance(account.getBalance())
+                .build();
+    }
+
+    private OperationResponse performWithdraw(OperationRequest operationRequest, Account account) {
+        BigDecimal resultBalance = account.getBalance().subtract(operationRequest.getSum());
+        if (resultBalance.compareTo(ZERO) >= 0) {
+            resultBalance = resultBalance.setScale(2, RoundingMode.HALF_DOWN);
+            account.setBalance(resultBalance);
+            repository.save(account);
+
             return OperationResponse.builder()
-                    .type(operation.getType())
+                    .type(operationRequest.getType())
                     .currentBalance(account.getBalance())
-                    .performed(true)
                     .build();
         } else {
-            throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "Operation is not supported");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough money");
         }
+    }
+
+    private OperationResponse performDeposit(OperationRequest operationRequest, Account account) {
+        BigDecimal resultBalance = account.getBalance().add(operationRequest.getSum());
+        account.setBalance(resultBalance);
+        repository.save(account);
+
+        return OperationResponse.builder()
+                .type(operationRequest.getType())
+                .currentBalance(account.getBalance())
+                .build();
     }
 }

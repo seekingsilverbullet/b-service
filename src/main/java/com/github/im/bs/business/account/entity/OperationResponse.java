@@ -18,6 +18,5 @@ import java.math.BigDecimal;
 public class OperationResponse {
     private OperationType type;
     private BigDecimal currentBalance;
-    private boolean performed;
     private String message;
 }

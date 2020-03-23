@@ -7,7 +7,7 @@ package com.github.im.bs.business.account.boundary;
 
 import com.github.im.bs.business.account.control.AccountService;
 import com.github.im.bs.business.account.entity.Account;
-import com.github.im.bs.business.account.entity.Operation;
+import com.github.im.bs.business.account.entity.OperationRequest;
 import com.github.im.bs.business.account.entity.OperationResponse;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -45,13 +45,11 @@ public class AccountResource {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @PostMapping(path = "/operation")
+    @PostMapping(path = "/operation", consumes = "application/json")
     @ApiOperation(value = "Performs the user account operation")
     public ResponseEntity<OperationResponse> performOperation(@PathVariable("id") long userId,
-                                                              @RequestBody Operation operation) {
+                                                              @RequestBody OperationRequest operation) {
         OperationResponse response = service.performOperation(userId, operation);
-        return response.isPerformed()
-                ? new ResponseEntity<>(response, HttpStatus.OK)
-                : new ResponseEntity<>(response, HttpStatus.NOT_MODIFIED);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }
