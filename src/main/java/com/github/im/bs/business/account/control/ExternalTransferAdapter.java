@@ -19,7 +19,7 @@ import java.math.BigDecimal;
 public class ExternalTransferAdapter {
     public void performExternalTransfer(String recipientId, BigDecimal operationSum) {
         try {
-            log.info("Performed external transfer request: {} -> {}", recipientId, operationSum);
+            log.info("Performed external transfer request: '{}' -> {}", recipientId, operationSum);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "The transfer was failed due to exception", e);

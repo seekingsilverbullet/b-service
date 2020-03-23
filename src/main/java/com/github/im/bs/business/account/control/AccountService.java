@@ -32,6 +32,7 @@ public class AccountService {
     private final ExternalTransferAdapter transferAdapter;
 
     private static final BigDecimal ZERO = new BigDecimal(0);
+    private static final BigDecimal EXTERNAL_TRANSFER_COMMISSION_VALUE = new BigDecimal("0.01");
 
     @Transactional(readOnly = true)
     public List<Account> getAllAccounts() {
@@ -69,18 +70,18 @@ public class AccountService {
         log.info("The account has deleted: {}", account);
     }
 
-    public OperationResponse performOperation(long userId, OperationRequest operationRequest) {
+    public OperationResponse performOperation(long userId, OperationRequest request) {
         try {
             Account account = getAccount(userId);
-            switch (operationRequest.getType()) {
+            switch (request.getType()) {
                 case CHECK_BALANCE:
                     return performCheckBalance(account);
                 case WITHDRAW:
-                    return performWithdraw(operationRequest.getOperationSum(), account);
+                    return performWithdraw(request.getOperationSum(), account);
                 case DEPOSIT:
-                    return performDeposit(operationRequest.getOperationSum(), account);
+                    return performDeposit(request.getOperationSum(), account);
                 case TRANSFER:
-                    return performTransfer(operationRequest, account);
+                    return performTransfer(request, account);
                 default:
                     throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "Operation is not supported");
             }
@@ -92,10 +93,12 @@ public class AccountService {
     }
 
     private OperationResponse performCheckBalance(Account account) {
-        return OperationResponse.builder()
+        OperationResponse response = OperationResponse.builder()
                 .type(OperationType.CHECK_BALANCE)
                 .currentBalance(account.getBalance())
                 .build();
+        log.info("Performed operation for user '{}': {}", account.getUser().getId(), response);
+        return response;
     }
 
     private OperationResponse performWithdraw(BigDecimal operationSum, Account account) {
@@ -105,11 +108,13 @@ public class AccountService {
             account.setBalance(resultBalance);
             repository.save(account);
 
-            return OperationResponse.builder()
+            OperationResponse response = OperationResponse.builder()
                     .type(OperationType.WITHDRAW)
                     .operationSum(operationSum)
                     .currentBalance(account.getBalance())
                     .build();
+            log.info("Performed operation for user '{}': {}", account.getUser().getId(), response);
+            return response;
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough money");
         }
@@ -120,54 +125,62 @@ public class AccountService {
         account.setBalance(resultBalance);
         repository.save(account);
 
-        return OperationResponse.builder()
+        OperationResponse response = OperationResponse.builder()
                 .type(OperationType.DEPOSIT)
                 .operationSum(operationSum)
                 .currentBalance(account.getBalance())
                 .build();
+        log.info("Performed operation for user '{}': {}", account.getUser().getId(), response);
+        return response;
     }
 
-    private OperationResponse performTransfer(OperationRequest operationRequest, Account account) {
-        switch (operationRequest.getServiceType()) {
+    private OperationResponse performTransfer(OperationRequest request, Account account) {
+        switch (request.getServiceType()) {
             case INTERNAL:
-                return performInternalTransfer(operationRequest, account);
+                return performInternalTransfer(request, account);
             case EXTERNAL:
-                return performExternalTransfer(operationRequest, account);
+                return performExternalTransfer(request, account);
             default:
                 throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "Service type is not supported");
         }
     }
 
-    private OperationResponse performInternalTransfer(OperationRequest operationRequest, Account account) {
-        Account recipient = getAccount(getUserIdFromRequest(operationRequest));
-        performWithdraw(operationRequest.getOperationSum(), account);
-        performDeposit(operationRequest.getOperationSum(), recipient);
-        return OperationResponse.builder()
-                .type(operationRequest.getType())
-                .operationSum(operationRequest.getOperationSum())
+    private OperationResponse performInternalTransfer(OperationRequest request, Account account) {
+        log.info("Trying to performed operation for user '{}': {}", account.getUser().getId(), request);
+        Account recipient = getAccount(getUserIdFromRequest(request));
+        performWithdraw(request.getOperationSum(), account);
+        performDeposit(request.getOperationSum(), recipient);
+        OperationResponse response = OperationResponse.builder()
+                .type(request.getType())
+                .operationSum(request.getOperationSum())
                 .currentBalance(account.getBalance())
                 .build();
+        log.info("Performed operation for user '{}': {}", account.getUser().getId(), response);
+        return response;
     }
 
-    private long getUserIdFromRequest(OperationRequest operationRequest) {
+    private long getUserIdFromRequest(OperationRequest request) {
         try {
-            return Long.parseLong(operationRequest.getRecipientId());
+            return Long.parseLong(request.getRecipientId());
         } catch (NumberFormatException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user id");
         }
     }
 
     private OperationResponse performExternalTransfer(OperationRequest request, Account account) {
+        log.info("Trying to performed operation for user '{}': {}", account.getUser().getId(), request);
         BigDecimal operationSum = request.getOperationSum();
-        BigDecimal commissionSum = operationSum.multiply(new BigDecimal("0.01"));
+        BigDecimal commissionSum = operationSum.multiply(EXTERNAL_TRANSFER_COMMISSION_VALUE);
 
         performWithdraw(operationSum.add(commissionSum), account);
         transferAdapter.performExternalTransfer(request.getRecipientId(), operationSum);
 
-        return OperationResponse.builder()
+        OperationResponse response = OperationResponse.builder()
                 .type(request.getType())
                 .operationSum(operationSum)
                 .currentBalance(account.getBalance())
                 .build();
+        log.info("Performed operation for user '{}': {}", account.getUser().getId(), response);
+        return response;
     }
 }
