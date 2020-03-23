@@ -8,6 +8,7 @@ package com.github.im.bs.business.account.control;
 import com.github.im.bs.business.account.entity.Account;
 import com.github.im.bs.business.account.entity.OperationRequest;
 import com.github.im.bs.business.account.entity.OperationResponse;
+import com.github.im.bs.business.account.entity.OperationType;
 import com.github.im.bs.business.user.control.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +27,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class AccountService {
-    private final UserService userService;
     private final AccountRepository repository;
+    private final UserService userService;
+    private final ExternalTransferAdapter transferAdapter;
 
     private static final BigDecimal ZERO = new BigDecimal(0);
 
@@ -72,11 +74,11 @@ public class AccountService {
             Account account = getAccount(userId);
             switch (operationRequest.getType()) {
                 case CHECK_BALANCE:
-                    return performCheckBalance(operationRequest, account);
+                    return performCheckBalance(account);
                 case WITHDRAW:
-                    return performWithdraw(operationRequest, account);
+                    return performWithdraw(operationRequest.getOperationSum(), account);
                 case DEPOSIT:
-                    return performDeposit(operationRequest, account);
+                    return performDeposit(operationRequest.getOperationSum(), account);
                 case TRANSFER:
                     return performTransfer(operationRequest, account);
                 default:
@@ -89,23 +91,23 @@ public class AccountService {
         }
     }
 
-    private OperationResponse performCheckBalance(OperationRequest operationRequest, Account account) {
+    private OperationResponse performCheckBalance(Account account) {
         return OperationResponse.builder()
-                .type(operationRequest.getType())
+                .type(OperationType.CHECK_BALANCE)
                 .currentBalance(account.getBalance())
                 .build();
     }
 
-    private OperationResponse performWithdraw(OperationRequest operationRequest, Account account) {
-        BigDecimal resultBalance = account.getBalance().subtract(operationRequest.getOperationSum());
+    private OperationResponse performWithdraw(BigDecimal operationSum, Account account) {
+        BigDecimal resultBalance = account.getBalance().subtract(operationSum);
         if (resultBalance.compareTo(ZERO) >= 0) {
             resultBalance = resultBalance.setScale(2, RoundingMode.HALF_DOWN);
             account.setBalance(resultBalance);
             repository.save(account);
 
             return OperationResponse.builder()
-                    .type(operationRequest.getType())
-                    .operationSum(operationRequest.getOperationSum())
+                    .type(OperationType.WITHDRAW)
+                    .operationSum(operationSum)
                     .currentBalance(account.getBalance())
                     .build();
         } else {
@@ -113,14 +115,14 @@ public class AccountService {
         }
     }
 
-    private OperationResponse performDeposit(OperationRequest operationRequest, Account account) {
-        BigDecimal resultBalance = account.getBalance().add(operationRequest.getOperationSum());
+    private OperationResponse performDeposit(BigDecimal operationSum, Account account) {
+        BigDecimal resultBalance = account.getBalance().add(operationSum);
         account.setBalance(resultBalance);
         repository.save(account);
 
         return OperationResponse.builder()
-                .type(operationRequest.getType())
-                .operationSum(operationRequest.getOperationSum())
+                .type(OperationType.DEPOSIT)
+                .operationSum(operationSum)
                 .currentBalance(account.getBalance())
                 .build();
     }
@@ -130,6 +132,7 @@ public class AccountService {
             case INTERNAL:
                 return performInternalTransfer(operationRequest, account);
             case EXTERNAL:
+                return performExternalTransfer(operationRequest, account);
             default:
                 throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "Service type is not supported");
         }
@@ -137,8 +140,8 @@ public class AccountService {
 
     private OperationResponse performInternalTransfer(OperationRequest operationRequest, Account account) {
         Account recipient = getAccount(getUserIdFromRequest(operationRequest));
-        performWithdraw(operationRequest, account);
-        performDeposit(operationRequest, recipient);
+        performWithdraw(operationRequest.getOperationSum(), account);
+        performDeposit(operationRequest.getOperationSum(), recipient);
         return OperationResponse.builder()
                 .type(operationRequest.getType())
                 .operationSum(operationRequest.getOperationSum())
@@ -152,5 +155,19 @@ public class AccountService {
         } catch (NumberFormatException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user id");
         }
+    }
+
+    private OperationResponse performExternalTransfer(OperationRequest request, Account account) {
+        BigDecimal operationSum = request.getOperationSum();
+        BigDecimal commissionSum = operationSum.multiply(new BigDecimal("0.01"));
+
+        performWithdraw(operationSum.add(commissionSum), account);
+        transferAdapter.performExternalTransfer(request.getRecipientId(), operationSum);
+
+        return OperationResponse.builder()
+                .type(request.getType())
+                .operationSum(operationSum)
+                .currentBalance(account.getBalance())
+                .build();
     }
 }
