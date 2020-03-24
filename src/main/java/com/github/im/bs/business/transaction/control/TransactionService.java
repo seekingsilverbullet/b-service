@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.Collections;
 import java.util.List;
 
@@ -127,7 +128,7 @@ public class TransactionService {
             transaction.setBalanceBeforeTransaction(originalBalance);
         }
         transaction.setBalanceAfterTransaction(resultBalance);
-        transaction.setExecutionTime(LocalDateTime.now());
+        transaction.setCreatedAt(LocalDateTime.now());
         transactionRepository.save(transaction);
         log.info("The transaction has registered: {}", transaction);
 
@@ -158,5 +159,10 @@ public class TransactionService {
                 .transactionSum(sum)
                 .currentBalance(balance)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Transaction> findCreatedTransactionsByPeriod(LocalDateTime startDate, LocalDateTime endDate) {
+        return Collections.unmodifiableList(transactionRepository.findCreatedAccountsByPeriod(startDate, endDate));
     }
 }

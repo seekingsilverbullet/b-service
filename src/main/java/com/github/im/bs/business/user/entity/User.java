@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -24,4 +25,6 @@ public class User {
     private String firstName;
     private String lastName;
     private UserType userType;
+    @ApiModelProperty(hidden = true)
+    private LocalDateTime createdAt;
 }

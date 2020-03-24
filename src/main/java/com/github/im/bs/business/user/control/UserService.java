@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.Collections;
 import java.util.List;
 
@@ -21,18 +23,18 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
-    private final UserRepository repository;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public List<User> findAllUsers() {
-        List<User> users = repository.findAll();
+        List<User> users = userRepository.findAll();
         log.info("All users have retrieved. Amount: {}", users.size());
         return Collections.unmodifiableList(users);
     }
 
     @Transactional(readOnly = true)
     public User findUser(Long userId) {
-        User user = repository.findUserById(userId);
+        User user = userRepository.findUserById(userId);
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
@@ -41,7 +43,8 @@ public class UserService {
     }
 
     public long createUser(User user) {
-        User currentUser = repository.save(user);
+        user.setCreatedAt(LocalDateTime.now());
+        User currentUser = userRepository.save(user);
         log.info("The user has created: {}", currentUser);
         return currentUser.getId();
     }
@@ -51,13 +54,18 @@ public class UserService {
         currentUser.setFirstName(user.getFirstName());
         currentUser.setLastName(user.getLastName());
         currentUser.setUserType(user.getUserType());
-        repository.save(currentUser);
+        userRepository.save(currentUser);
         log.info("The user has updated: {}", currentUser);
     }
 
     public void deleteUser(long userId) {
         User currentUser = findUser(userId);
-        repository.delete(currentUser);
+        userRepository.delete(currentUser);
         log.info("The user has deleted: {}", currentUser);
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> findCreatedUsersByPeriod(LocalDateTime startDate, LocalDateTime endDate) {
+        return Collections.unmodifiableList(userRepository.findCreatedUsersByPeriod(startDate, endDate));
     }
 }

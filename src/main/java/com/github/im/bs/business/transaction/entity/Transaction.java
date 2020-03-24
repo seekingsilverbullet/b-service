@@ -32,7 +32,8 @@ public class Transaction {
     private BigDecimal transactionSum;
     private BigDecimal balanceBeforeTransaction;
     private BigDecimal balanceAfterTransaction;
-    private LocalDateTime executionTime;
+    @ApiModelProperty(hidden = true)
+    private LocalDateTime createdAt;
     private String userReferenceId;
     @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @ApiModelProperty(hidden = true)

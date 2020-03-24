@@ -14,6 +14,7 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -27,6 +28,8 @@ public class Account {
     @ApiModelProperty(hidden = true)
     private UUID id;
     private BigDecimal balance;
+    @ApiModelProperty(hidden = true)
+    private LocalDateTime createdAt;
     @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @ApiModelProperty(hidden = true)
     @OnDelete(action = OnDeleteAction.CASCADE)
