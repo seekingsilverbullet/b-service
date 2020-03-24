@@ -30,13 +30,13 @@ public class AdminOperationResource {
 
     @GetMapping(path = "/accounts")
     @ApiOperation(value = "Returns all of existing accounts", response = Account.class, responseContainer = "List")
-    public ResponseEntity<List<Account>> getAllAccounts() {
-        return new ResponseEntity<>(accountService.getAllAccounts(), HttpStatus.OK);
+    public ResponseEntity<List<Account>> findAllAccounts() {
+        return new ResponseEntity<>(accountService.findAllAccounts(), HttpStatus.OK);
     }
 
     @GetMapping(path = "/transactions")
     @ApiOperation(value = "Returns all of existing transactions", response = Transaction.class, responseContainer = "List")
-    public ResponseEntity<List<Transaction>> getAllTransactions() {
-        return new ResponseEntity<>(transactionService.getAllTransactions(), HttpStatus.OK);
+    public ResponseEntity<List<Transaction>> findAllTransactions() {
+        return new ResponseEntity<>(transactionService.findAllTransactions(), HttpStatus.OK);
     }
 }

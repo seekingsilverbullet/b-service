@@ -21,39 +21,39 @@ import java.util.List;
 @RequiredArgsConstructor
 @Api(value = "User Handler")
 public class UserResource {
-    private final UserService service;
+    private final UserService userService;
 
     @GetMapping
     @ApiOperation(value = "Returns all of existing users", response = User.class, responseContainer = "List")
-    public ResponseEntity<List<User>> getAllUsers() {
-        return new ResponseEntity<>(service.getAllUsers(), HttpStatus.OK);
+    public ResponseEntity<List<User>> findAllUsers() {
+        return new ResponseEntity<>(userService.findAllUsers(), HttpStatus.OK);
     }
 
     @GetMapping(path = "/{id}")
     @ApiOperation(value = "Returns existing user by id", response = User.class)
-    public ResponseEntity<User> getUser(@PathVariable("id") long userId) {
-        User user = service.getUser(userId);
+    public ResponseEntity<User> findUser(@PathVariable("id") long userId) {
+        User user = userService.findUser(userId);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
     @PostMapping(consumes = "application/json")
     @ApiOperation(value = "Creates new user")
-    public ResponseEntity<Long> create(@RequestBody User user) {
-        long userId = service.create(user);
+    public ResponseEntity<Long> createUser(@RequestBody User user) {
+        long userId = userService.createUser(user);
         return new ResponseEntity<>(userId, HttpStatus.CREATED);
     }
 
     @PutMapping(path = "/{id}", consumes = "application/json")
     @ApiOperation(value = "Updates the existing user by id")
-    public ResponseEntity<?> update(@PathVariable("id") long userId, @RequestBody User user) {
-        service.update(user, userId);
+    public ResponseEntity<?> updateUser(@PathVariable("id") long userId, @RequestBody User user) {
+        userService.updateUser(user, userId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping(path = "/{id}")
     @ApiOperation(value = "Deletes the existing user by id")
-    public ResponseEntity<?> delete(@PathVariable("id") long userId) {
-        service.delete(userId);
+    public ResponseEntity<?> deleteUser(@PathVariable("id") long userId) {
+        userService.deleteUser(userId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

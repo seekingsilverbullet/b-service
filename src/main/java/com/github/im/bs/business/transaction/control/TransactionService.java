@@ -5,15 +5,23 @@
 
 package com.github.im.bs.business.transaction.control;
 
+import com.github.im.bs.business.account.control.AccountService;
 import com.github.im.bs.business.account.entity.Account;
+import com.github.im.bs.business.transaction.entity.TransactionRequest;
+import com.github.im.bs.business.transaction.entity.TransactionResponse;
+import com.github.im.bs.business.transaction.entity.TransactionType;
 import com.github.im.bs.business.transaction.entity.Transaction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -21,18 +29,140 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class TransactionService {
-    private final TransactionRepository repository;
+    private final TransactionRepository transactionRepository;
+    private final ExternalTransactionAdapter externalTransactionAdapter;
+    private final AccountService accountService;
+
+    private static final BigDecimal ZERO = new BigDecimal(0);
+    private static final BigDecimal EXTERNAL_TRANSFER_COMMISSION_VALUE = new BigDecimal("0.01");
 
     @Transactional(readOnly = true)
-    public List<Transaction> getAllTransactions() {
-        List<Transaction> transactions = repository.findAll();
+    public List<Transaction> findAllTransactions() {
+        List<Transaction> transactions = transactionRepository.findAll();
         log.info("All transactions have retrieved. Amount: {}", transactions.size());
-        return new ArrayList<>(transactions);
+        return Collections.unmodifiableList(transactions);
     }
 
-    public void register(Transaction transaction) {
+    @Transactional(readOnly = true)
+    public List<Transaction> findUserTransactions(long userId) {
+        List<Transaction> transactions = transactionRepository.findTransactionsByUserId(userId);
+        log.info("All user '{}' transactions have retrieved. Amount: {}", userId, transactions.size());
+        return Collections.unmodifiableList(transactions);
+    }
+
+    public TransactionResponse performTransaction(long userId, TransactionRequest request) {
+        try {
+            Account account = accountService.findAccount(userId);
+            switch (request.getTransactionType()) {
+                case WITHDRAW:
+                    return performWithdraw(request, account, null);
+                case DEPOSIT:
+                    return performDeposit(request, account, null);
+                case TRANSFER_INTERNAL:
+                    return performInternalTransfer(request, account);
+                case TRANSFER_EXTERNAL:
+                    return performExternalTransfer(request, account);
+                default:
+                    throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "Transaction type is not supported");
+            }
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Transaction execution is failed", e);
+        }
+    }
+
+    private TransactionResponse performWithdraw(TransactionRequest request, Account account, Transaction transaction) {
+        BigDecimal resultBalance = account.getBalance().subtract(request.getTransactionSum());
+        if (resultBalance.compareTo(ZERO) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough money");
+        }
+
+        return performTransaction(request, account, transaction, resultBalance);
+    }
+
+    private TransactionResponse performDeposit(TransactionRequest request, Account account, Transaction transaction) {
+        BigDecimal resultBalance = account.getBalance().add(request.getTransactionSum());
+
+        return performTransaction(request, account, transaction, resultBalance);
+    }
+
+    private TransactionResponse performInternalTransfer(TransactionRequest request, Account account) {
+        log.info("Trying to performed operation for user '{}': {}", account.getUser().getId(), request);
+        Account recipient = accountService.findAccount(getUserIdFromRequest(request));
+
+        performWithdraw(request, account, createTransaction(request, account));
+
+        Transaction transaction = createTransaction(request, recipient);
+        transaction.setUserReferenceId(String.valueOf(account.getUser().getId()));
+        performDeposit(request, recipient, transaction);
+
+        TransactionResponse response = createResponse(request.getTransactionType(),
+                request.getTransactionSum(), account.getBalance());
+        log.info("Performed operation for user '{}': {}", account.getUser().getId(), response);
+        return response;
+    }
+
+    private TransactionResponse performExternalTransfer(TransactionRequest request, Account account) {
+        log.info("Trying to performed operation for user '{}': {}", account.getUser().getId(), request);
+        BigDecimal transactionSum = request.getTransactionSum();
+        BigDecimal commissionSum = transactionSum.multiply(EXTERNAL_TRANSFER_COMMISSION_VALUE);
+
+        request.setTransactionSum(transactionSum.add(commissionSum));
+        performWithdraw(request, account, createTransaction(request, account));
+        externalTransactionAdapter.performExternalTransfer(request.getRecipientId(), transactionSum);
+
+        TransactionResponse response = createResponse(request.getTransactionType(),
+                transactionSum, account.getBalance());
+        log.info("Performed operation for user '{}': {}", account.getUser().getId(), response);
+        return response;
+    }
+
+    private TransactionResponse performTransaction(TransactionRequest request, Account account,
+                                                   Transaction transaction, BigDecimal resultBalance) {
+        resultBalance = resultBalance.setScale(2, RoundingMode.HALF_DOWN);
+        BigDecimal originalBalance = account.getBalance();
+        account.setBalance(resultBalance);
+        accountService.updateAccount(account);
+
+        if (transaction == null) {
+            transaction = createTransaction(request, account);
+            transaction.setBalanceBeforeTransaction(originalBalance);
+        }
+        transaction.setBalanceAfterTransaction(resultBalance);
         transaction.setExecutionTime(LocalDateTime.now());
-        repository.save(transaction);
+        transactionRepository.save(transaction);
         log.info("The transaction has registered: {}", transaction);
+
+        TransactionResponse response = createResponse(request.getTransactionType(),
+                request.getTransactionSum(), account.getBalance());
+        log.info("Performed operation for user '{}': {}", account.getUser().getId(), response);
+        return response;
+    }
+
+    private long getUserIdFromRequest(TransactionRequest request) {
+        try {
+            return Long.parseLong(request.getRecipientId());
+        } catch (NumberFormatException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user id");
+        }
+    }
+
+    private Transaction createTransaction(TransactionRequest request, Account account) {
+        return Transaction.builder()
+                .transactionType(request.getTransactionType())
+                .transactionSum(request.getTransactionSum())
+                .balanceBeforeTransaction(account.getBalance())
+                .userReferenceId(request.getRecipientId())
+                .user(account.getUser())
+                .build();
+    }
+
+    private TransactionResponse createResponse(TransactionType type, BigDecimal sum, BigDecimal balance) {
+        return TransactionResponse.builder()
+                .transactionType(type)
+                .transactionSum(sum)
+                .currentBalance(balance)
+                .build();
     }
 }

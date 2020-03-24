@@ -5,7 +5,6 @@
 
 package com.github.im.bs.business.transaction.entity;
 
-import com.github.im.bs.business.account.entity.OperationType;
 import com.github.im.bs.business.user.entity.User;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -18,8 +17,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
 @Builder
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @ApiModel(value = "Transaction")
 @Entity
@@ -29,14 +28,14 @@ public class Transaction {
     @Setter(AccessLevel.NONE)
     @ApiModelProperty(hidden = true)
     private Long id;
-    private OperationType operationType;
+    private TransactionType transactionType;
+    private BigDecimal transactionSum;
     private BigDecimal balanceBeforeTransaction;
     private BigDecimal balanceAfterTransaction;
     private LocalDateTime executionTime;
+    private String userReferenceId;
     @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @ApiModelProperty(hidden = true)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 }
-
-

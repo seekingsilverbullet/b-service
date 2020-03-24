@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -24,14 +24,14 @@ public class UserService {
     private final UserRepository repository;
 
     @Transactional(readOnly = true)
-    public List<User> getAllUsers() {
+    public List<User> findAllUsers() {
         List<User> users = repository.findAll();
         log.info("All users have retrieved. Amount: {}", users.size());
-        return new ArrayList<>(users);
+        return Collections.unmodifiableList(users);
     }
 
     @Transactional(readOnly = true)
-    public User getUser(Long userId) {
+    public User findUser(Long userId) {
         User user = repository.findUserById(userId);
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
@@ -40,14 +40,14 @@ public class UserService {
         return user;
     }
 
-    public long create(User user) {
+    public long createUser(User user) {
         User currentUser = repository.save(user);
         log.info("The user has created: {}", currentUser);
         return currentUser.getId();
     }
 
-    public void update(User user, long userId) {
-        User currentUser = getUser(userId);
+    public void updateUser(User user, long userId) {
+        User currentUser = findUser(userId);
         currentUser.setFirstName(user.getFirstName());
         currentUser.setLastName(user.getLastName());
         currentUser.setUserType(user.getUserType());
@@ -55,8 +55,8 @@ public class UserService {
         log.info("The user has updated: {}", currentUser);
     }
 
-    public void delete(long userId) {
-        User currentUser = getUser(userId);
+    public void deleteUser(long userId) {
+        User currentUser = findUser(userId);
         repository.delete(currentUser);
         log.info("The user has deleted: {}", currentUser);
     }
