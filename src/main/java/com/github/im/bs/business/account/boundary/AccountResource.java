@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+
 @RestController
 @RequestMapping(path = "/users/{id}/account", produces = "application/json")
 @RequiredArgsConstructor
@@ -43,6 +45,13 @@ public class AccountResource {
     public ResponseEntity<?> delete(@PathVariable("id") long userId) {
         service.delete(userId);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @GetMapping(path = "/balance")
+    @ApiOperation(value = "Returns user account balance")
+    public ResponseEntity<BigDecimal> retrieveBalance(@PathVariable("id") long userId) {
+        BigDecimal balance = service.retrieveBalance(userId);
+        return new ResponseEntity<>(balance, HttpStatus.OK);
     }
 
     @PostMapping(path = "/operation", consumes = "application/json")

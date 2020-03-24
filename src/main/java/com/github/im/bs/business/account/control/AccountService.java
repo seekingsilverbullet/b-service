@@ -73,12 +73,20 @@ public class AccountService {
         log.info("The account has deleted: {}", account);
     }
 
+    @Transactional(readOnly = true)
+    public BigDecimal retrieveBalance(long userId) {
+        BigDecimal balance = repository.retrieveBalanceByUserId(userId);
+        if (balance == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found");
+        }
+        log.info("Retrieved account balance for user '{}': {}", userId, balance);
+        return balance;
+    }
+
     public OperationResponse performOperation(long userId, OperationRequest request) {
         try {
             Account account = getAccount(userId);
             switch (request.getOperationType()) {
-                case CHECK_BALANCE:
-                    return performCheckBalance(account);
                 case WITHDRAW:
                     return performWithdraw(request.getOperationSum(), account, null);
                 case DEPOSIT:
@@ -93,15 +101,6 @@ public class AccountService {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Operation execution is failed", e);
         }
-    }
-
-    private OperationResponse performCheckBalance(Account account) {
-        OperationResponse response = OperationResponse.builder()
-                .type(OperationType.CHECK_BALANCE)
-                .currentBalance(account.getBalance())
-                .build();
-        log.info("Performed operation for user '{}': {}", account.getUser().getId(), response);
-        return response;
     }
 
     private OperationResponse performWithdraw(BigDecimal operationSum, Account account, Transaction transaction) {
