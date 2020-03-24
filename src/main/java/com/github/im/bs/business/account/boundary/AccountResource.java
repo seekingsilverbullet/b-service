@@ -35,7 +35,7 @@ public class AccountResource {
     public ResponseEntity<?> createAccount(@PathVariable("id") long userId,
                                            @RequestBody Account account) {
         accountService.createAccount(userId, account);
-        return new ResponseEntity<>(HttpStatus.CREATED);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping

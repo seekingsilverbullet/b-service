@@ -108,8 +108,9 @@ public class TransactionService {
         BigDecimal transactionSum = request.getTransactionSum();
         BigDecimal commissionSum = transactionSum.multiply(EXTERNAL_TRANSFER_COMMISSION_VALUE);
 
+        Transaction transaction = createTransaction(request, account);
         request.setTransactionSum(transactionSum.add(commissionSum));
-        performWithdraw(request, account, createTransaction(request, account));
+        performWithdraw(request, account, transaction);
         externalTransactionAdapter.performExternalTransfer(request.getRecipientId(), transactionSum);
 
         TransactionResponse response = createResponse(request.getTransactionType(),

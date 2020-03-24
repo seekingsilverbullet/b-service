@@ -40,7 +40,7 @@ public class UserResource {
     @ApiOperation(value = "Creates new user")
     public ResponseEntity<Long> createUser(@RequestBody User user) {
         long userId = userService.createUser(user);
-        return new ResponseEntity<>(userId, HttpStatus.CREATED);
+        return new ResponseEntity<>(userId, HttpStatus.OK);
     }
 
     @PutMapping(path = "/{id}", consumes = "application/json")
