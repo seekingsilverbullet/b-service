@@ -11,6 +11,7 @@ import com.github.im.bs.business.admin.entity.Report;
 import com.github.im.bs.business.transaction.control.TransactionService;
 import com.github.im.bs.business.transaction.entity.Transaction;
 import com.github.im.bs.business.user.control.UserService;
+import com.github.im.bs.business.util.DateTimeUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class AdminOperationService {
     private final AccountService accountService;
     private final TransactionService transactionService;
     private final UserService userService;
+    private final DateTimeUtil dateTimeUtil;
 
     public List<Account> findAllAccounts() {
         return accountService.findAllAccounts();
@@ -39,14 +41,16 @@ public class AdminOperationService {
 
     public Report createMonthReport(Month month) {
         Report report = new Report();
+        LocalDateTime startTime = dateTimeUtil.monthStartTime(month);
+        LocalDateTime endTime = dateTimeUtil.monthEndTime(month);
 
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startDate = LocalDateTime.of(now.getYear(), month, 1, 0, 0, 0);
-        LocalDateTime endDate = LocalDateTime.of(now.getYear(), month.plus(1), 1, 0, 0, 0);
-
-        report.setUsersCreated(userService.findCreatedUsersByPeriod(startDate, endDate));
-        report.setAccountsCreated(accountService.findCreatedAccountsByPeriod(startDate, endDate));
-        report.setTransactionsPerformed(transactionService.findCreatedTransactionsByPeriod(startDate, endDate));
+        report.setUsersCreated(userService.findCreatedUsersByPeriod(startTime, endTime));
+        report.setAccountsCreated(accountService.findCreatedAccountsByPeriod(startTime, endTime));
+        report.setTransactionsPerformed(transactionService.findCreatedTransactionsByPeriod(startTime, endTime));
         return report;
+    }
+
+    public void performCommissionCharging() {
+        transactionService.performCommissionCharging();
     }
 }

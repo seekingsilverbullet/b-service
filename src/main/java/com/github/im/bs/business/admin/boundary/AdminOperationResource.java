@@ -46,4 +46,11 @@ public class AdminOperationResource {
     public ResponseEntity<Report> createMonthReport(@RequestParam Month month) {
         return new ResponseEntity<>(adminOperationService.createMonthReport(month), HttpStatus.OK);
     }
+
+    @GetMapping(path = "/commission")
+    @ApiOperation(value = "Perform commission charging")
+    public ResponseEntity<?> performCommissionCharging() {
+        adminOperationService.performCommissionCharging();
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

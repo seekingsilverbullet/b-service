@@ -17,5 +17,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findTransactionsByUserId(long userId);
 
     @Query("select t from Transaction t where t.createdAt >= :startDate and t.createdAt < :endDate order by t.user.id")
-    List<Transaction> findCreatedAccountsByPeriod(LocalDateTime startDate, LocalDateTime endDate);
+    List<Transaction> findCreatedTransactionsByPeriod(LocalDateTime startDate, LocalDateTime endDate);
 }

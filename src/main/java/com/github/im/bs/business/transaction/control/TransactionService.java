@@ -11,6 +11,8 @@ import com.github.im.bs.business.transaction.entity.TransactionRequest;
 import com.github.im.bs.business.transaction.entity.TransactionResponse;
 import com.github.im.bs.business.transaction.entity.TransactionType;
 import com.github.im.bs.business.transaction.entity.Transaction;
+import com.github.im.bs.business.user.entity.User;
+import com.github.im.bs.business.util.DateTimeUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,7 +25,12 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.groupingBy;
 
 @Slf4j
 @Service
@@ -33,8 +40,8 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final ExternalTransactionAdapter externalTransactionAdapter;
     private final AccountService accountService;
+    private final DateTimeUtil dateTimeUtil;
 
-    private static final BigDecimal ZERO = new BigDecimal(0);
     private static final BigDecimal EXTERNAL_TRANSFER_COMMISSION_VALUE = new BigDecimal("0.01");
 
     @Transactional(readOnly = true)
@@ -49,6 +56,23 @@ public class TransactionService {
         List<Transaction> transactions = transactionRepository.findTransactionsByUserId(userId);
         log.info("All user '{}' transactions have retrieved. Amount: {}", userId, transactions.size());
         return Collections.unmodifiableList(transactions);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Transaction> findCreatedTransactionsByPeriod(LocalDateTime startDate, LocalDateTime endDate) {
+        return Collections.unmodifiableList(transactionRepository.findCreatedTransactionsByPeriod(startDate, endDate));
+    }
+
+    public void performCommissionCharging() {
+        Month month = LocalDateTime.now().minusMonths(1).getMonth();
+        LocalDateTime startTime = dateTimeUtil.monthStartTime(month);
+        LocalDateTime endTime = dateTimeUtil.monthEndTime(month);
+
+        List<Transaction> monthTransactions = findCreatedTransactionsByPeriod(startTime, endTime);
+        Map<User, BigDecimal> volumeByUser = calculateVolumeByUser(monthTransactions);
+        accountService.findAllAccounts().forEach(account -> {
+            chargeCommission(volumeByUser, account);
+        });
     }
 
     public TransactionResponse performTransaction(long userId, TransactionRequest request) {
@@ -76,7 +100,7 @@ public class TransactionService {
     private TransactionResponse performWithdraw(TransactionRequest request, Account account, Transaction transaction) {
         log.info("Trying to perform transaction for user '{}': {}", account.getUser().getId(), request);
         BigDecimal resultBalance = account.getBalance().subtract(request.getTransactionSum());
-        if (resultBalance.compareTo(ZERO) < 0) {
+        if (resultBalance.compareTo(BigDecimal.ZERO) < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough money");
         }
 
@@ -161,8 +185,32 @@ public class TransactionService {
                 .build();
     }
 
-    @Transactional(readOnly = true)
-    public List<Transaction> findCreatedTransactionsByPeriod(LocalDateTime startDate, LocalDateTime endDate) {
-        return Collections.unmodifiableList(transactionRepository.findCreatedAccountsByPeriod(startDate, endDate));
+    private void chargeCommission(Map<User, BigDecimal> volumeByUser, Account account) {
+        BigDecimal commission = BigDecimal.ZERO;
+        User user = account.getUser();
+        if (volumeByUser.containsKey(user)) {
+            BigDecimal userVolume = volumeByUser.get(user);
+            if (userVolume.compareTo(new BigDecimal(30000)) <= 0) {
+                commission = new BigDecimal(200);
+            }
+        } else {
+            commission = new BigDecimal(100);
+        }
+
+        if (commission.compareTo(BigDecimal.ZERO) > 0) {
+            performTransaction(user.getId(),
+                    new TransactionRequest(TransactionType.WITHDRAW, commission, "commission"));
+        }
+    }
+
+    private Map<User, BigDecimal> calculateVolumeByUser(List<Transaction> monthTransactions) {
+        Map<User, List<Transaction>> transactionByUser = monthTransactions.stream().collect(groupingBy(Transaction::getUser));
+        Map<User, BigDecimal> volumeByUser = new HashMap<>();
+        for (Map.Entry<User, List<Transaction>> entry : transactionByUser.entrySet()) {
+            Stream<Transaction> userTransactions = entry.getValue().stream();
+            BigDecimal volume = userTransactions.map(Transaction::getTransactionSum).reduce(BigDecimal.ZERO, BigDecimal::add);
+            volumeByUser.put(entry.getKey(), volume);
+        }
+        return volumeByUser;
     }
 }
