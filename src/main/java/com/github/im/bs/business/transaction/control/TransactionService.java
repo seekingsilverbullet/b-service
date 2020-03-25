@@ -78,6 +78,7 @@ public class TransactionService {
     public TransactionResponse performTransaction(long userId, TransactionRequest request) {
         try {
             Account account = accountService.findAccount(userId);
+            log.info("Trying to perform transaction for user '{}': {}", account.getUser().getId(), request);
             switch (request.getTransactionType()) {
                 case WITHDRAW:
                     return performWithdraw(request, account, null);
@@ -98,7 +99,6 @@ public class TransactionService {
     }
 
     private TransactionResponse performWithdraw(TransactionRequest request, Account account, Transaction transaction) {
-        log.info("Trying to perform transaction for user '{}': {}", account.getUser().getId(), request);
         BigDecimal resultBalance = account.getBalance().subtract(request.getTransactionSum());
         if (resultBalance.compareTo(BigDecimal.ZERO) < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough money");
@@ -108,14 +108,12 @@ public class TransactionService {
     }
 
     private TransactionResponse performDeposit(TransactionRequest request, Account account, Transaction transaction) {
-        log.info("Trying to perform transaction for user '{}': {}", account.getUser().getId(), request);
         BigDecimal resultBalance = account.getBalance().add(request.getTransactionSum());
 
         return performTransaction(request, account, transaction, resultBalance);
     }
 
     private TransactionResponse performInternalTransfer(TransactionRequest request, Account account) {
-        log.info("Trying to perform transaction for user '{}': {}", account.getUser().getId(), request);
         Account recipient = accountService.findAccount(getUserIdFromRequest(request));
 
         performWithdraw(request, account, createTransaction(request, account));
@@ -128,7 +126,6 @@ public class TransactionService {
     }
 
     private TransactionResponse performExternalTransfer(TransactionRequest request, Account account) {
-        log.info("Trying to perform operation for user '{}': {}", account.getUser().getId(), request);
         BigDecimal transactionSum = request.getTransactionSum();
         BigDecimal commissionSum = transactionSum.multiply(EXTERNAL_TRANSFER_COMMISSION_VALUE);
 
