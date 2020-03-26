@@ -17,6 +17,7 @@ public class Constants {
 
     // swagger api
     public static final String USER = "User";
+    public static final String USER_TYPE = "User type";
     public static final String USER_HANDLER = "User Handler";
     public static final String ALL_USERS_DESCRIPTION = "Returns all of existing users";
     public static final String FIND_USER_DESCRIPTION = "Returns existing user by id";
@@ -24,6 +25,9 @@ public class Constants {
     public static final String UPDATE_USER_DESCRIPTION = "Updates the existing user by id";
     public static final String DELETE_USER_DESCRIPTION = "Deletes the existing user by id";
     public static final String TRANSACTION = "Transaction";
+    public static final String TRANSACTION_REQUEST = "Transaction request";
+    public static final String TRANSACTION_RESPONSE = "Transaction response";
+    public static final String TRANSACTION_TYPE = "Transaction type";
     public static final String TRANSACTION_HANDLER = "Transaction Handler";
     public static final String ALL_USER_TRANSACTIONS_DESCRIPTION = "Returns all existing user account transactions by user id";
     public static final String PERFORM_TRANSACTION_DESCRIPTION = "Performs user account transactions";
@@ -56,17 +60,21 @@ public class Constants {
     public static final String USER_CREATED_MESSAGE = "The user has created: {}";
     public static final String USER_UPDATED_MESSAGE = "The user has updated: {}";
     public static final String USER_DELETED_MESSAGE = "The user has deleted: {}";
+    public static final String ALL_USERS_BY_PERIOD_MESSAGE = "Retrieved all users created from {} to {}";
     public static final String TRANSACTIONS_RETRIEVED_MESSAGE = "All transactions have retrieved. Amount: {}";
     public static final String USER_TRANSACTIONS_RETRIEVED_MESSAGE = "All user '{}' transactions have retrieved. Amount: {}";
     public static final String TRANSACTION_STARTED_MESSAGE = "Trying to perform transaction for user '{}': {}";
     public static final String TRANSACTION_REGISTERED_MESSAGE = "The transaction has registered: {}";
     public static final String EXTERNAL_TRANSACTION_PERFORMED_MESSAGE = "Performed external transfer request: '{}' -> {}";
+    public static final String ALL_TRANSACTIONS_BY_PERIOD_MESSAGE = "Retrieved all transactions created from {} to {}";
     public static final String ACCOUNTS_RETRIEVED_MESSAGE = "All accounts have retrieved. Amount: {}";
     public static final String ACCOUNT_RETRIEVED_MESSAGE = "The account has retrieved by user id: {}";
     public static final String ACCOUNT_CREATED_MESSAGE = "The account has created: {}";
     public static final String ACCOUNT_UPDATED_MESSAGE = "The account has updated: {}";
     public static final String ACCOUNT_DELETED_MESSAGE = "The account has deleted: {}";
     public static final String ACCOUNT_BALANCE_RETRIEVED_MESSAGE = "Retrieved account balance for user '{}': {}";
+    public static final String ALL_ACCOUNTS_BY_PERIOD_MESSAGE = "Retrieved all accounts created from {} to {}";
     public static final String COMMISSION_CHARGING_STARTED_MESSAGE = "Scheduled commission charging started at {}";
     public static final String COMMISSION_CHARGING_FINISHED_MESSAGE = "Scheduled commission charging finished at {}";
+    public static final String COMMISSION_CHARGED_MESSAGE = "The commission '{}' charged from {}";
 }

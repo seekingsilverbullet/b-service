@@ -5,6 +5,11 @@
 
 package com.github.im.bs.business.transaction.entity;
 
+import io.swagger.annotations.ApiModel;
+
+import static com.github.im.bs.business.util.Constants.TRANSACTION_TYPE;
+
+@ApiModel(value = TRANSACTION_TYPE)
 public enum TransactionType {
     DEPOSIT,
     WITHDRAW,

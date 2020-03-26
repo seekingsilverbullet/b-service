@@ -67,6 +67,8 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public List<User> findCreatedUsersByPeriod(LocalDateTime startDate, LocalDateTime endDate) {
-        return Collections.unmodifiableList(userRepository.findCreatedUsersByPeriod(startDate, endDate));
+        List<User> createdUsersByPeriod = userRepository.findCreatedUsersByPeriod(startDate, endDate);
+        log.info(ALL_USERS_BY_PERIOD_MESSAGE, startDate, endDate);
+        return Collections.unmodifiableList(createdUsersByPeriod);
     }
 }

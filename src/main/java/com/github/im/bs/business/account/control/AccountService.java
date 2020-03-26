@@ -80,6 +80,8 @@ public class AccountService {
 
     @Transactional(readOnly = true)
     public List<Account> findCreatedAccountsByPeriod(LocalDateTime startDate, LocalDateTime endDate) {
-        return Collections.unmodifiableList(accountRepository.findCreatedAccountsByPeriod(startDate, endDate));
+        List<Account> createdAccountsByPeriod = accountRepository.findCreatedAccountsByPeriod(startDate, endDate);
+        log.info(ALL_ACCOUNTS_BY_PERIOD_MESSAGE, startDate, endDate);
+        return Collections.unmodifiableList(createdAccountsByPeriod);
     }
 }

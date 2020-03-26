@@ -61,7 +61,9 @@ public class TransactionService {
 
     @Transactional(readOnly = true)
     public List<Transaction> findCreatedTransactionsByPeriod(LocalDateTime startDate, LocalDateTime endDate) {
-        return Collections.unmodifiableList(transactionRepository.findCreatedTransactionsByPeriod(startDate, endDate));
+        List<Transaction> createdTransactionsByPeriod = transactionRepository.findCreatedTransactionsByPeriod(startDate, endDate);
+        log.info(ALL_TRANSACTIONS_BY_PERIOD_MESSAGE, startDate, endDate);
+        return Collections.unmodifiableList(createdTransactionsByPeriod);
     }
 
     public void performCommissionCharging() {
@@ -196,8 +198,8 @@ public class TransactionService {
         }
 
         if (commission.compareTo(BigDecimal.ZERO) > 0) {
-            performTransaction(user.getId(),
-                    new TransactionRequest(TransactionType.WITHDRAW, commission, COMMISSION));
+            performTransaction(user.getId(), new TransactionRequest(TransactionType.WITHDRAW, commission, COMMISSION));
+            log.info(COMMISSION_CHARGED_MESSAGE, commission, account.getUser());
         }
     }
 
