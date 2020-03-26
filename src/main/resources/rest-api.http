@@ -1,0 +1,114 @@
+###
+POST http://localhost:8080/api/users
+accept: application/json
+Content-Type: application/json
+
+{
+  "firstName": "Ivan",
+  "lastName": "Ivanov",
+  "userType": "ADMIN"
+}
+
+###
+POST http://localhost:8080/api/users
+accept: application/json
+Content-Type: application/json
+
+{
+  "firstName": "Petr",
+  "lastName": "Petrov",
+  "userType": "USER"
+}
+
+###
+POST http://localhost:8080/api/users/1/account
+accept: application/json
+Content-Type: application/json
+
+{
+  "balance": 10000
+}
+
+###
+POST http://localhost:8080/api/users/2/account
+accept: application/json
+Content-Type: application/json
+
+{
+  "balance": 15000
+}
+
+###
+POST http://localhost:8080/api/users/1/account/transactions
+accept: application/json
+Content-Type: application/json
+
+{
+  "transactionSum": 5000,
+  "transactionType": "WITHDRAW"
+}
+
+###
+POST http://localhost:8080/api/users/2/account/transactions
+accept: application/json
+Content-Type: application/json
+
+{
+  "transactionSum": 15000,
+  "transactionType": "DEPOSIT"
+}
+
+###
+GET http://localhost:8080/api/users/1/account/balance
+accept: application/json
+Content-Type: application/json
+
+###
+GET http://localhost:8080/api/users/2/account/balance
+accept: application/json
+Content-Type: application/json
+
+###
+POST http://localhost:8080/api/users/2/account/transactions
+accept: application/json
+Content-Type: application/json
+
+{
+  "transactionType": "TRANSFER_EXTERNAL",
+  "transactionSum": 5000,
+  "recipientId": "1000-1000"
+}
+
+###
+POST http://localhost:8080/api/users/2/account/transactions
+accept: application/json
+Content-Type: application/json
+
+{
+  "transactionType": "TRANSFER_INTERNAL",
+  "transactionSum": 4000,
+  "recipientId": "1"
+}
+
+###
+GET http://localhost:8080/api/users/1/account/transactions
+accept: application/json
+
+###
+GET http://localhost:8080/api/users/2/account/transactions
+accept: application/json
+
+###
+GET http://localhost:8080/api/admin/report?month=MARCH
+accept: application/json
+
+###
+POST http://localhost:8080/api/admin/commission
+accept: application/json
+
+###
+
+
+
+
+
