@@ -39,7 +39,6 @@ public class UserResourceIntegrationTest {
 
         assertNotNull(users);
         assertFalse(users.isEmpty());
-        assertEquals(userId, users.get(0).getId());
     }
 
     @Test

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.github.im.bs.business.util.Constants.*;
 import static java.util.stream.Collectors.groupingBy;
 
 @Slf4j
@@ -47,14 +48,14 @@ public class TransactionService {
     @Transactional(readOnly = true)
     public List<Transaction> findAllTransactions() {
         List<Transaction> transactions = transactionRepository.findAll();
-        log.info("All transactions have retrieved. Amount: {}", transactions.size());
+        log.info(TRANSACTIONS_RETRIEVED_MESSAGE, transactions.size());
         return Collections.unmodifiableList(transactions);
     }
 
     @Transactional(readOnly = true)
     public List<Transaction> findUserTransactions(long userId) {
         List<Transaction> transactions = transactionRepository.findTransactionsByUserId(userId);
-        log.info("All user '{}' transactions have retrieved. Amount: {}", userId, transactions.size());
+        log.info(USER_TRANSACTIONS_RETRIEVED_MESSAGE, userId, transactions.size());
         return Collections.unmodifiableList(transactions);
     }
 
@@ -78,7 +79,7 @@ public class TransactionService {
     public TransactionResponse performTransaction(long userId, TransactionRequest request) {
         try {
             Account account = accountService.findAccount(userId);
-            log.info("Trying to perform transaction for user '{}': {}", account.getUser().getId(), request);
+            log.info(TRANSACTION_STARTED_MESSAGE, account.getUser().getId(), request);
             switch (request.getTransactionType()) {
                 case WITHDRAW:
                     return performWithdraw(request, account, null);
@@ -89,19 +90,19 @@ public class TransactionService {
                 case TRANSFER_EXTERNAL:
                     return performExternalTransfer(request, account);
                 default:
-                    throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "Transaction type is not supported");
+                    throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, UNSUPPORTED_TRANSACTION_MESSAGE);
             }
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Transaction execution is failed", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, FAILED_TRANSACTION_MESSAGE, e);
         }
     }
 
     private TransactionResponse performWithdraw(TransactionRequest request, Account account, Transaction transaction) {
         BigDecimal resultBalance = account.getBalance().subtract(request.getTransactionSum());
         if (resultBalance.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not enough money");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, NOT_ENOUGH_MONEY);
         }
 
         return performTransaction(request, account, transaction, resultBalance);
@@ -151,7 +152,7 @@ public class TransactionService {
         transaction.setBalanceAfterTransaction(resultBalance);
         transaction.setCreatedAt(LocalDateTime.now());
         transactionRepository.save(transaction);
-        log.info("The transaction has registered: {}", transaction);
+        log.info(TRANSACTION_REGISTERED_MESSAGE, transaction);
 
         return createResponse(request.getTransactionType(), request.getTransactionSum(), account.getBalance());
     }
@@ -160,7 +161,7 @@ public class TransactionService {
         try {
             return Long.parseLong(request.getRecipientId());
         } catch (NumberFormatException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user id");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, INVALID_USER_ID);
         }
     }
 
@@ -196,7 +197,7 @@ public class TransactionService {
 
         if (commission.compareTo(BigDecimal.ZERO) > 0) {
             performTransaction(user.getId(),
-                    new TransactionRequest(TransactionType.WITHDRAW, commission, "commission"));
+                    new TransactionRequest(TransactionType.WITHDRAW, commission, COMMISSION));
         }
     }
 

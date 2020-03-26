@@ -16,11 +16,13 @@ import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import static com.github.im.bs.business.util.Constants.TRANSACTION;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@ApiModel(value = "Transaction")
+@ApiModel(value = TRANSACTION)
 @Entity
 public class Transaction {
     @Id

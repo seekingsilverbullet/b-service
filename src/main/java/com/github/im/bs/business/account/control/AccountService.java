@@ -16,9 +16,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.Month;
 import java.util.Collections;
 import java.util.List;
+
+import static com.github.im.bs.business.util.Constants.*;
 
 @Slf4j
 @Service
@@ -31,7 +32,7 @@ public class AccountService {
     @Transactional(readOnly = true)
     public List<Account> findAllAccounts() {
         List<Account> accounts = accountRepository.findAll();
-        log.info("All accounts have retrieved. Amount: {}", accounts.size());
+        log.info(ACCOUNTS_RETRIEVED_MESSAGE, accounts.size());
         return Collections.unmodifiableList(accounts);
     }
 
@@ -39,41 +40,41 @@ public class AccountService {
     public Account findAccount(long userId) {
         Account account = accountRepository.findAccountByUserId(userId);
         if (account == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ACCOUNT_NOT_FOUND);
         }
-        log.info("The account has retrieved by user id: {}", account);
+        log.info(ACCOUNT_RETRIEVED_MESSAGE, account);
         return account;
     }
 
     public void createAccount(long userId, Account account) {
         Account currentAccount = accountRepository.findAccountByUserId(userId);
         if (currentAccount != null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account exists");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ACCOUNT_EXISTS);
         }
         account.setCreatedAt(LocalDateTime.now());
         account.setUser(userService.findUser(userId));
         accountRepository.save(account);
-        log.info("The account has created: {}", account);
+        log.info(ACCOUNT_CREATED_MESSAGE, account);
     }
 
     public void updateAccount(Account account) {
         accountRepository.save(account);
-        log.info("The account has updated: {}", account);
+        log.info(ACCOUNT_UPDATED_MESSAGE, account);
     }
 
     public void deleteAccount(long userId) {
         Account account = accountRepository.findAccountByUserId(userId);
         if (account == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account doesn't exist");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ACCOUNT_NOT_EXISTS);
         }
         accountRepository.delete(account);
-        log.info("The account has deleted: {}", account);
+        log.info(ACCOUNT_DELETED_MESSAGE, account);
     }
 
     @Transactional(readOnly = true)
     public BigDecimal checkBalance(long userId) {
         BigDecimal balance = findAccount(userId).getBalance();
-        log.info("Retrieved account balance for user '{}': {}", userId, balance);
+        log.info(ACCOUNT_BALANCE_RETRIEVED_MESSAGE, userId, balance);
         return balance;
     }
 

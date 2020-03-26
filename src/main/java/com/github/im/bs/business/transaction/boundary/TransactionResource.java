@@ -18,22 +18,24 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.github.im.bs.business.util.Constants.*;
+
 @RestController
-@RequestMapping(path = "/users/{id}/account/transactions", produces = "application/json")
+@RequestMapping(path = "/users/{id}/account/transactions", produces = APPLICATION_JSON)
 @RequiredArgsConstructor
-@Api(value = "Transaction Handler")
+@Api(value = TRANSACTION_HANDLER)
 public class TransactionResource {
     private final TransactionService transactionService;
 
     @GetMapping
-    @ApiOperation(value = "Returns all existing user account transactions by user id", response = Transaction.class, responseContainer = "List")
+    @ApiOperation(value = ALL_USER_TRANSACTIONS_DESCRIPTION, response = Transaction.class, responseContainer = LIST)
     public ResponseEntity<List<Transaction>> findTransactions(@PathVariable("id") long userId) {
         List<Transaction> transactions = transactionService.findUserTransactions(userId);
         return new ResponseEntity<>(transactions, HttpStatus.OK);
     }
 
-    @PostMapping(consumes = "application/json")
-    @ApiOperation(value = "Performs user account transactions")
+    @PostMapping(consumes = APPLICATION_JSON)
+    @ApiOperation(value = PERFORM_TRANSACTION_DESCRIPTION)
     public ResponseEntity<TransactionResponse> performTransaction(@PathVariable("id") long userId,
                                                                   @RequestBody TransactionRequest request) {
         TransactionResponse response = transactionService.performTransaction(userId, request);

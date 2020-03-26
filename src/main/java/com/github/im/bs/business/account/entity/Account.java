@@ -17,9 +17,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static com.github.im.bs.business.util.Constants.ACCOUNT;
+
 @Data
 @NoArgsConstructor
-@ApiModel(value = "Account")
+@ApiModel(value = ACCOUNT)
 @Entity
 public class Account {
     @Id

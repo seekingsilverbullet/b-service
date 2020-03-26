@@ -13,16 +13,20 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
+import static com.github.im.bs.business.util.Constants.COMMISSION_CHARGING_FINISHED_MESSAGE;
+import static com.github.im.bs.business.util.Constants.COMMISSION_CHARGING_STARTED_MESSAGE;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SchedulerConfig {
     private final TransactionService transactionService;
+    private static final String EVERY_FIRST_DAY_OF_MONTH = "0 0 0 1 * *";
 
-    @Scheduled(cron = "0 0 0 1 * *")
+    @Scheduled(cron = EVERY_FIRST_DAY_OF_MONTH)
     public void scheduleCommissionCharge() {
-        log.info("Scheduled commission charging started at {}", LocalDateTime.now());
+        log.info(COMMISSION_CHARGING_STARTED_MESSAGE, LocalDateTime.now());
         transactionService.performCommissionCharging();
-        log.info("Scheduled commission charging finished at {}", LocalDateTime.now());
+        log.info(COMMISSION_CHARGING_FINISHED_MESSAGE, LocalDateTime.now());
     }
 }

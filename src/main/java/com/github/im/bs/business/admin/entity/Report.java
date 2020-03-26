@@ -13,8 +13,10 @@ import lombok.Data;
 
 import java.util.List;
 
+import static com.github.im.bs.business.util.Constants.REPORT;
+
 @Data
-@ApiModel(value = "Report")
+@ApiModel(value = REPORT)
 public class Report {
     private List<User> usersCreated;
     private List<Account> accountsCreated;

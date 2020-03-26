@@ -12,9 +12,11 @@ import lombok.*;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
+import static com.github.im.bs.business.util.Constants.USER;
+
 @Data
 @NoArgsConstructor
-@ApiModel(value = "User")
+@ApiModel(value = USER)
 @Entity
 public class User {
     @Id

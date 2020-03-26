@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
+import static com.github.im.bs.business.util.Constants.*;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,7 +29,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<User> findAllUsers() {
         List<User> users = userRepository.findAll();
-        log.info("All users have retrieved. Amount: {}", users.size());
+        log.info(USERS_RETRIEVED_MESSAGE, users.size());
         return Collections.unmodifiableList(users);
     }
 
@@ -35,16 +37,16 @@ public class UserService {
     public User findUser(Long userId) {
         User user = userRepository.findUserById(userId);
         if (user == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, USER_NOT_FOUND_MESSAGE);
         }
-        log.info("The user has retrieved by id: {}", user);
+        log.info(USER_RETRIEVED_MESSAGE, user);
         return user;
     }
 
     public long createUser(User user) {
         user.setCreatedAt(LocalDateTime.now());
         User currentUser = userRepository.save(user);
-        log.info("The user has created: {}", currentUser);
+        log.info(USER_CREATED_MESSAGE, currentUser);
         return currentUser.getId();
     }
 
@@ -54,13 +56,13 @@ public class UserService {
         currentUser.setLastName(user.getLastName());
         currentUser.setUserType(user.getUserType());
         userRepository.save(currentUser);
-        log.info("The user has updated: {}", currentUser);
+        log.info(USER_UPDATED_MESSAGE, currentUser);
     }
 
     public void deleteUser(long userId) {
         User currentUser = findUser(userId);
         userRepository.delete(currentUser);
-        log.info("The user has deleted: {}", currentUser);
+        log.info(USER_DELETED_MESSAGE, currentUser);
     }
 
     @Transactional(readOnly = true)
