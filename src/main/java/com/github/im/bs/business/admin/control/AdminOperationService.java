@@ -24,21 +24,24 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class AdminOperationService {
     private final AccountService accountService;
     private final TransactionService transactionService;
     private final UserService userService;
     private final DateTimeUtil dateTimeUtil;
 
+    @Transactional(readOnly = true)
     public List<Account> findAllAccounts() {
         return accountService.findAllAccounts();
     }
 
+    @Transactional(readOnly = true)
     public List<Transaction> findAllTransactions() {
         return transactionService.findAllTransactions();
     }
 
+    @Transactional(readOnly = true)
     public Report createMonthReport(Month month) {
         Report report = new Report();
         LocalDateTime startTime = dateTimeUtil.monthStartTime(month);
