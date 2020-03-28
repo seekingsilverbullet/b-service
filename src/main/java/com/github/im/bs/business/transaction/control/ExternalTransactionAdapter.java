@@ -8,6 +8,7 @@ package com.github.im.bs.business.transaction.control;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.annotation.RequestScope;
 
 import java.math.BigDecimal;
 
@@ -15,6 +16,7 @@ import static com.github.im.bs.business.util.Constants.EXTERNAL_TRANSACTION_PERF
 
 @Slf4j
 @Component
+@RequestScope
 @Transactional
 public class ExternalTransactionAdapter {
     public void performExternalTransfer(String recipientId, BigDecimal transferSum) {
