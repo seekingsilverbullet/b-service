@@ -18,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -36,7 +35,6 @@ import static java.util.stream.Collectors.groupingBy;
 
 @Slf4j
 @Service
-@RequestScope
 @RequiredArgsConstructor
 @Transactional
 public class TransactionService {

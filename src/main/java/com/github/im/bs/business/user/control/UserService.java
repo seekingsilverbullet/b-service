@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -22,7 +21,6 @@ import static com.github.im.bs.business.util.Constants.*;
 
 @Slf4j
 @Service
-@RequestScope
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
